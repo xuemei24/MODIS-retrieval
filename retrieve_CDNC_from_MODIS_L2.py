@@ -19,6 +19,8 @@ import os
 import matplotlib as mpl
 mpl.use('Agg')
 
+from unrotate_coord import unrotate_coord
+
 # Script to regrid MODIS level 2 cloud and aerosol data and UM regional simulation data to the same grid for plotting and/or evaluation
 
 
@@ -59,6 +61,11 @@ print('check lat',lat.shape)
 # Second, define a target grid at 6 km resolution (Match the model resolution)
 area_def2 = geometry.AreaDefinition.from_extent(area_id='southern_ocean_6km',projection=ccrs.PlateCarree(),shape=(480,1287),area_extent=(109.7,-61.4,179.9,-35.2),units='deg') 
 lon2,lat2 = area_def2.get_lonlats()
+
+# Unrotate the pole latitude and longitude for regional model
+umlon,umlat = unrotate_coord('/ocean/projects/atm200005p/xwangw/netcdfs/u-ct879/march/regional/20180318/umnsaa_pb000','m01s34i101',148,39)
+lons_temp = umlon[0,:]
+lons_temp[np.where(lons_temp<0)]=360+lons_temp[np.where(lons_temp<0)]
 
 # Read in the altitudes from the model output and store it to hr
 a = Dataset('/ocean/projects/atm200005p/xwangw/netcdfs/u-ct879/march/regional/20180318/abl_umnsaa_pj000.nc')
@@ -293,6 +300,9 @@ for filen in ppfiles:
     umctop[:] = -999
     um_cdncs = load_with(path_pafile,cube3d)
     um_cdncs.data[:] = -999
+    um_cdncs.coord('grid_longitude').points = lons_temp
+    um_cdncs.coord('grid_latitude').points = umlat[:,0]
+
     for it in range(2):
         print('i time',it)
         for ih in range(53):

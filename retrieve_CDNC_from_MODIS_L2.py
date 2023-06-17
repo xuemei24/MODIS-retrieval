@@ -19,8 +19,6 @@ import os
 import matplotlib as mpl
 mpl.use('Agg')
 
-from unrotate_coord import unrotate_coord
-
 # Script to regrid MODIS level 2 cloud and aerosol data and UM regional simulation data to the same grid for plotting and/or evaluation
 
 
@@ -62,16 +60,11 @@ print('check lat',lat.shape)
 area_def2 = geometry.AreaDefinition.from_extent(area_id='southern_ocean_6km',projection=ccrs.PlateCarree(),shape=(480,1287),area_extent=(109.7,-61.4,179.9,-35.2),units='deg') 
 lon2,lat2 = area_def2.get_lonlats()
 
-# Unrotate the pole latitude and longitude for regional model
-umlon,umlat = unrotate_coord('/ocean/projects/atm200005p/xwangw/netcdfs/u-ct879/march/regional/20180318/umnsaa_pb000','m01s34i101',148,39)
-lons_temp = umlon[0,:]
-lons_temp[np.where(lons_temp<0)]=360+lons_temp[np.where(lons_temp<0)]
-
 # Read in the altitudes from the model output and store it to hr
 a = Dataset('/ocean/projects/atm200005p/xwangw/netcdfs/u-ct879/march/regional/20180318/abl_umnsaa_pj000.nc')
 hr = a.variables['level_height'][:]
 
-# The following lines (until def regrid_modis_data) select MODIS granules for each hour in a day.
+# The following lines (until def regrid_modis_data) select MODIS granules for each hour in a day.
 # I manually assigned the number of files for each hour (number_of_files). Otherwise, please refer
 # to /ocean/projects/atm200005p/shared/python-analysis/resample_modis.py to select the granules.
 # I also manually selected the corresponding UM output for each day (ppfiles)
@@ -149,7 +142,7 @@ def getCDNC(df):
 
     nd1 = np.where(~np.isnan(nd1),nd1,0)
     nd1 = np.where(~np.isinf(nd1),nd1,0)
- 
+
     nd2 = np.where(phase<2,nd1,0)  # remove ice clouds, 0 -- cloud free, 1 -- water cloud, 2 -- ice cloud, 3 -- mixed phase cloud, 6 -- undetermined phase
     nd3 = np.where(lwp>2,nd2,0)    # remove thin clouds
     nd4 = np.where(cot>3,nd3,0)    # remove thin clouds
@@ -233,12 +226,12 @@ for ij in range(len(CDNC_per_hour)):
     if len(CDNC_per_hour[str(ij)])==0:
         print('skip')
         continue
-    
+
     # Remove unrealistic CDNC
     CDNC_plot = np.where(CDNC_per_hour[str(ij)]>0,CDNC_per_hour[str(ij)],np.nan)
     CDNC_plot = np.where(CDNC_plot<5000,CDNC_plot,np.nan)
     CDNC_per_file[str(ij)] = CDNC_plot
-        
+
     if int(ij)>=10:
         np.savetxt(path_to_save_cdnc_per_hour+'modis_cdnc_'+daystring+'th_'+str(ij)+'utc.txt', CDNC_plot, fmt='%.18e', delimiter=',')
     else:
@@ -300,9 +293,6 @@ for filen in ppfiles:
     umctop[:] = -999
     um_cdncs = load_with(path_pafile,cube3d)
     um_cdncs.data[:] = -999
-    um_cdncs.coord('grid_longitude').points = lons_temp
-    um_cdncs.coord('grid_latitude').points = umlat[:,0]
-
     for it in range(2):
         print('i time',it)
         for ih in range(53):
@@ -359,7 +349,7 @@ for fmodis_cdnc,um_cdnc,ij in zip(fsmodis_cdnc,ums_cdnc,np.arange(len(fsmodis_cd
     fmodis_cdnc = filter_data(fmodis_cdnc0,fmodis_cdnc0)
     um_cdnc     = filter_data(fmodis_cdnc0,um_cdnc0)
 
-    # Save the data that do not overlap among the selected hours
+    # Save the data that do not overlap among the selected hours
     if ij == 0:
         pmcdnc = fmodis_cdnc
         pumcdnc = um_cdnc

@@ -71,6 +71,10 @@ hr = a.variables['level_height'][:]
 number_of_files = {'0':7,'1':8,'2':3,'3':11,'4':4,'5':7,'6':8,'7':4,'8':10,'9':5,'10':6,'11':9,'12':3,'13':10,'14':6,'15':5,'16':10,'17':3,'18':9,'19':6,'20':5,'21':10,'22':4,'23':8}
 ppfiles = [path_model1+'20/umnsaa_pj048',path_model1+'20/umnsaa_pj054',path_model1+'20/umnsaa_pj060',path_model1+'20/umnsaa_pj066']
 
+cycle_len = 2                        # Days of cycle length
+first_day_of_cycle = '18'            # The date of the first model cycle
+first_day_of_the_second_cycle = '20' # The date of the second cycle (if there is one)
+
 # Calculate CDNC from MODIS for each granule
 def qsatw(T, p):
     Tzero=273.16
@@ -307,11 +311,11 @@ for filen in ppfiles:
         um_cdncs.data[it] = cdnc.data[it,umctop_locs,a1,a2]                   # store the cdnc at cloud top heights
 
     for t in range(2):
-        if int(daystring)>20:
-            daystring2 = str(int(daystring)-2)
+        if int(daystring)>int(first_day_of_the_second_cycle):
+            daystring2 = str(int(daystring)-cycle_len)
         else:
             daystring2 = daystring
-        utc=utc0+t*3-(int(daystring2)-18)*24
+        utc=utc0+t*3-(int(daystring2)-int(first_day_of_cycle))*24
 
         cdnc_r = um_cdncs[t,:,:]
 
